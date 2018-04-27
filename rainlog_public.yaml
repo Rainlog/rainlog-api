@@ -1,0 +1,516 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Rainlog API
+  description: |
+    Rainlog API for accessing data collected on
+    [Rainlog.org](https://rainlog.org)
+
+    This public API is read-only and requires no authentication.
+  contact:
+    name: help@rainlog.org
+    email: help@rainlog.org
+servers:
+  - url: 'https://rainlog.org/api/1.0'
+tags:
+  - name: Reading
+    description: "A reading for a single day"
+  - name: MonthReading
+    description: "A reading for an entire month. There are very few of these readings and this type was never properly supported. It is not recommended for use in any data studies."
+  - name: Gauge
+    description: "A rain gauge. The actual properties of the gauge are stored in its GaugeRevision. A gauge may be modified over its life, but may not be moved more than a quarter mile from it's original location."
+  - name: GaugeRevision
+    description: "Type and location of a gauge. Revisions exist because a gauge can be updated by a user, but it should not retroactively affect old readings."
+
+paths:
+  /Reading/getFiltered:
+    post:
+      tags:
+        - Reading
+      description: >
+        Get a list of Readings, filtered by criteria
+
+        Filter gauge revisions and return a list. This will return
+        GaugeRevisions whose
+          - readingId are in the list of readingIds
+          - AND readingDate intersects the date range
+          - AND position intersects the specified region
+          - AND gaugeType matches the list of types specified
+          - AND gaugeIds match the list of gaugeIds specified
+          - AND userIds match the list of userIds specified
+          - AND quality matches the list of qualities specified
+        Omitted or null fields will disable filtering on those fields.
+      requestBody:
+        description: Criteria by which to filter the data
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReadingFilter'
+      responses:
+        '200':
+          description: 'Successful operation, returning a list of readings'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reading'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /MonthReading/getFiltered:
+    post:
+      tags:
+        - MonthReading
+      description: >
+        Get a list of MonthReadings, filtered by criteria
+
+        Filter gauge revisions and return a list. This will return
+        GaugeRevisions whose
+          - monthReadingId are in the list of monthReadingIds
+          - AND readingDate intersects the date range
+          - AND position intersects the specified region
+          - AND gaugeType matches the list of types specified
+          - AND gaugeIds match the list of gaugeIds specified
+          - AND userIds match the list of userIds specified
+
+        Omitted or null fields will disable filtering on those fields.
+      requestBody:
+        description: Criteria by which to filter the data
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MonthReadingFilter'
+      responses:
+        '200':
+          description: 'Successful operation, returning a list of MonthReadings'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MonthReading'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /GaugeRevision/getFiltered:
+    post:
+      tags:
+        - GaugeRevision
+      description: 'Get a list of GaugeRevisions, filtered by criteria'
+      requestBody:
+        description: >
+          Filter gauge revisions and return a list. This will return
+          GaugeRevisions whose
+            - gaugeRevisionId matches the list of gaugeRevisionIds
+            - AND existence intersects the date range
+            - AND position intersects the specified region
+            - AND gaugeType matches the list of types specified
+            - AND gaugeIds match the list of gaugeIds specified
+            - AND userIds match the list of userIds specified
+
+            gaugeRevisionIds, region, gaugeType, gaugeIds, and userIds may be null or omitted to disable filtering on those fields
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GaugeRevisionFilter'
+      responses:
+        '200':
+          description: 'Successful operation, returning a list of GaugeRevisions'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GaugeRevision'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /Gauge/getFiltered:
+    post:
+      tags:
+        - Gauge
+      description: 'Get a list of Gauges, filtered by criteria'
+      requestBody:
+        description: >
+          Filter Gauges and return a list. This will return Gauges whose
+            - gaugeIds match the list of gaugeIds specified
+            - AND userIds match the list of userIds specified
+
+            gaugeIds and userIds may be null or omitted to disable filtering on those fields
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GaugeFilter'
+      responses:
+        '200':
+          description: 'Successful operation, returning a list of Gauges'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Gauge'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Reading:
+      description: 'A reading for a specific day, measured roughly from 7am-7am'
+      properties:
+        readingId:
+          $ref: '#/components/schemas/DatabaseId'
+        gaugeId:
+          $ref: '#/components/schemas/DatabaseId'
+        gaugeRevisionId:
+          $ref: '#/components/schemas/DatabaseId'
+        remarks:
+          type: string
+        readingDate:
+          description: 'Date the reading was taken, time local to gauge GPS coordinate.'
+          $ref: '#/components/schemas/ISO8601Date'
+        readingHour:
+          description: 'Hour the reading was taken, time local to gauge GPS coordinate.'
+          type: integer
+          format: int32
+          example: 7
+        readingMinute:
+          description: >-
+            Minute the reading was taken, time local to gauge GPS
+            coordinate.
+          type: integer
+          format: int32
+        quality:
+          $ref: '#/components/schemas/ReadingQuality'
+        rainAmount:
+          description: >
+            Liquid precipitation, in inches. The nullability of this field
+            changes with quality.
+
+
+            - "Good", "Trace", or "Poor"
+               - This value must not be null
+            - "Snow"
+               - This value _may_ be null
+            - "Lost", or "Absent"
+               - This value must be null
+          type: number
+          format: double
+        snowDepth:
+          description: >
+            Snow depth, in inches. The nullability of this field changes
+            with quality.
+
+            - "Good", "Trace", "Poor", "Lost" or "Absent"
+               - This value must be null
+            - "Snow"
+               - This value _may_ be null
+          type: number
+          format: double
+          example: null
+        snowAccumulation:
+          description: >
+            Snow accumulation, in inches. The nullability of this field
+            changes with quality.
+
+            - "Good", "Trace", "Poor", "Lost" or "Absent"
+               - This value must be null
+            - "Snow"
+               - This value _may_ be null
+          type: number
+          format: double
+          example: null
+    MonthReading:
+      description: 'A reading for an entire month'
+      properties:
+        monthReadingId:
+          $ref: '#/components/schemas/DatabaseId'
+        gaugeId:
+          $ref: '#/components/schemas/DatabaseId'
+        gaugeRevisionId:
+          $ref: '#/components/schemas/DatabaseId'
+        year:
+          type: integer
+        month:
+          type: integer
+        remarks:
+          type: string
+        rainAmount:
+          description: Liquid precipitation, in inches.
+          type: number
+          format: double
+    Gauge:
+      properties:
+        gaugeId:
+          $ref: '#/components/schemas/DatabaseId'
+        userId:
+          $ref: '#/components/schemas/DatabaseId'
+        name:
+          type: string
+          example: Bob's gauge
+        status:
+          $ref: '#/components/schemas/GaugeStatus'
+    GaugeRevision:
+      properties:
+        gaugeRevisionId:
+          $ref: '#/components/schemas/DatabaseId'
+        gaugeId:
+          $ref: '#/components/schemas/DatabaseId'
+        createdDate:
+          nullable: false
+          $ref: '#/components/schemas/ISO8601Date'
+        brand:
+          type: string
+          example: AccuGauge
+        model:
+          type: string
+          example: AccuGauge 2000
+        description:
+          type: string
+          example: On South side of house
+        position:
+          $ref: '#/components/schemas/GpsCoordinate'
+        gaugeType:
+          $ref: '#/components/schemas/GaugeType'
+        gaugeTypeOther:
+          type: string
+          example: null
+    DatabaseId:
+      type: integer
+      format: int64
+    ISO8601Date:
+      description: 'Short ISO 8601 formatted date, formatted __YYYY-MM-DD__'
+      type: string
+      example: '1999-02-25'
+    GpsCoordinate:
+      properties:
+        lat:
+          description: Latitude
+          type: number
+          format: double
+        lng:
+          description: Longitude
+          type: number
+          format: double
+      required:
+        - lat
+        - lng
+    GeoRegion:
+      description: A generic geospacial region. Polygons are not currently supported.
+      oneOf:
+        - $ref: '#/components/schemas/GeoCircle'
+        - $ref: '#/components/schemas/GeoRectangle'
+      example:
+        type: Circle
+        center:
+          lat: 20.1
+          lng: 11.4
+        radius: 1.2
+    GeoCircle:
+      description: A geospacial region in the shape of a circle
+      properties:
+        type:
+          type: string
+          enum:
+            - Circle
+          nullable: false
+        center:
+          $ref: '#/components/schemas/GpsCoordinate'
+        radius:
+          description: 'The radius of the circle, in miles.'
+          type: number
+          format: double
+      required:
+        - type
+        - center
+        - radius
+      example:
+        type: Circle
+        center:
+          lat: 20.1
+          lng: 11.4
+        radius: 1.2
+    GeoRectangle:
+      description: >
+        A geospacial region in the shape of rectangle coordinates. The rectangle
+        is defined by its four edges - north west east south.
+      properties:
+        type:
+          type: string
+          enum:
+            - Rectangle
+          nullable: false
+        westLng:
+          description: West-most longitude
+          type: number
+          format: double
+        eastLng:
+          description: East-most longitude
+          type: number
+          format: double
+        northLat:
+          description: North-most latitude
+          type: number
+          format: double
+        southLat:
+          description: South-most latitude
+          type: number
+          format: double
+      required:
+        - type
+        - westLng
+        - eastLng
+        - northLat
+        - southLat
+      example:
+        type: Rectangle
+        westLng: -120.1
+        eastLng: -100.4
+        northLat: 25.1
+        southLat: 35.8
+    ReadingQuality:
+      description: Describes the quality and type of reading
+      type: string
+      enum:
+        - Good
+        - Trace
+        - Poor
+        - Snow
+        - Lost
+        - Absent
+    ReadingFilter:
+      description: Criteria for a /Reading/getFiltered request
+      allOf:
+        - properties:
+            readingIds:
+              type: array
+              items:
+                $ref: '#/components/schemas/DatabaseId'
+            quality:
+              nullable: true
+              type: array
+              items:
+                $ref: '#/components/schemas/ReadingQuality'
+              default:
+                - Good
+                - Trace
+                - Poor
+                - Snow
+                - Lost
+                - Absent
+            pagination:
+              $ref: '#/components/schemas/Pagination'
+        - $ref: '#/components/schemas/GaugeRevisionFilter'
+    MonthReadingFilter:
+      description: Criteria for a /MonthReading/getFiltered request
+      allOf:
+        - properties:
+            monthReadingIds:
+              type: array
+              items:
+                $ref: '#/components/schemas/DatabaseId'
+            pagination:
+              $ref: '#/components/schemas/Pagination'
+        - $ref: '#/components/schemas/GaugeRevisionFilter'
+    GaugeRevisionFilter:
+      description: Criteria for a /GaugeRevision/getFiltered request
+      allOf:
+        - properties:
+            gaugeRevisionIds:
+              type: array
+              items:
+                $ref: '#/components/schemas/DatabaseId'
+            dateRangeStart:
+              $ref: '#/components/schemas/ISO8601Date'
+            dateRangeEnd:
+              $ref: '#/components/schemas/ISO8601Date'
+            region:
+              $ref: '#/components/schemas/GeoRegion'
+            gaugeType:
+              type: array
+              items:
+                $ref: '#/components/schemas/GaugeType'
+              default:
+                - TruCheckWedge
+                - SimpleCylinderRectangularCatch
+                - FunnelCatch
+                - FunnelCatchWithOverflow
+                - TuppingBucketElectronic
+                - Other
+            pagination:
+              $ref: '#/components/schemas/Pagination'
+        - $ref: '#/components/schemas/GaugeFilter'
+    GaugeFilter:
+      description: Criteria for a /Gauge/getFiltered request
+      properties:
+        gaugeIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatabaseId'
+        userIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatabaseId'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    Pagination:
+      description: Describes how to limit the result size
+      properties:
+        offset:
+          description: "First element to return"
+          type: integer
+          default: 0
+        limit:
+          description: "Max number of elements to return. This value may not exceed 1000."
+          type: integer
+          default: 1000
+          example: 1000
+    GaugeType:
+      description: Currently allowed types of gauges
+      type: string
+      enum:
+        - TruCheckWedge
+        - SimpleCylinderRectangularCatch
+        - FunnelCatch
+        - FunnelCatchWithOverflow
+        - TuppingBucketElectronic
+        - Other
+    GaugeStatus:
+      description: User specified activity state of gauge
+      type: string
+      enum:
+        - Active
+        - Inactive
+        - InactiveHidden
+    Error:
+      properties:
+        code:
+          description: |
+            - ProtocolError: There was a problem with receiving or understanding the request
+            - ServerError: The server had a general problem servicing the request. May also mean BadInput.
+            - BadInput: Something in the input can not be processed or converted to the neccessary type. Double check the values submitted.
+          type: string
+          enum:
+            - ProtocolError
+            - ServerError
+            - BadInput
+        message:
+          description: "A plain English error message for the developer"
+          type: string
