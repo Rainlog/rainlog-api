@@ -1,7 +1,7 @@
 # rainlog-api
 
 The public Rainlog API is defined in OpenAPI 3.0 and is viewable in a user-friendly way at Swaggerhub:
-https://app.swaggerhub.com/apis/rainlog/rainlog/1.0.0
+https://app.swaggerhub.com/apis/rainlog/rainlog/
 
 The public API is a minimal RESTful JSON API designed to return hundreds of data elements per call. Typical "CRUD" verbs are not used. All http interactions must occur through https POST requests.
 
