@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  version: 1.0.0
+  version: 1.0.1
   title: Rainlog API
   description: |
     Rainlog API for accessing data collected on
@@ -448,11 +448,11 @@ components:
               items:
                 $ref: '#/components/schemas/GaugeType'
               default:
-                - TruCheckWedge
-                - SimpleCylinderRectangularCatch
+                - TruChek
+                - SimpleCatch
                 - FunnelCatch
                 - FunnelCatchWithOverflow
-                - TuppingBucketElectronic
+                - TippingBucketOrElectronic
                 - Other
             pagination:
               $ref: '#/components/schemas/Pagination'
@@ -486,11 +486,11 @@ components:
       description: Currently allowed types of gauges
       type: string
       enum:
-        - TruCheckWedge
-        - SimpleCylinderRectangularCatch
+        - TruChek
+        - SimpleCatch
         - FunnelCatch
         - FunnelCatchWithOverflow
-        - TuppingBucketElectronic
+        - TippingBucketOrElectronic
         - Other
     GaugeStatus:
       description: User specified activity state of gauge
