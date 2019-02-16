@@ -1,0 +1,88 @@
+# Byte-compiled / optimized / DLL files
+.pytest_cache/
+__pycache__/
+*.py[cod]
+
+# emacs temp files
+*~
+#*#
+
+# C extensions
+*.so
+
+# Distribution / packaging
+bin/
+develop-eggs/
+dist/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+Drafts/
+*/build/
+build/
+venv/
+
+*.egg-info/
+.installed.cfg
+*.egg*
+
+# spa_c_files builds
+pvlib/spa_c_files/build*
+pvlib/spa_c_files/spa_py.c
+
+# spa_c_files source
+pvlib/spa_c_files/spa.c
+pvlib/spa_c_files/spa.h
+pvlib/spa_c_files/spa_tester.c
+
+# generated documentation
+docs/sphinx/source/generated
+docs/sphinx/source/savefig
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+
+# Translations
+*.mo
+
+# IDE's (Mr Developer, pydev, pycharm...)
+.mr.developer.cfg
+.project
+.pydevproject
+.spyderproject
+.idea/
+*.sublime-project
+*.sublime-workspace
+.vscode
+
+# Rope
+.ropeproject
+
+# Django stuff:
+*.log
+*.pot
+
+# HDF tables
+*.h5
+
+
+#Datafiles
+*.csv
+
+# vi
+*.swp
+
+#Ignore some notebooks
+*.ipynb
+!docs/tutorials/*.ipynb
