@@ -120,18 +120,6 @@ def get_readings_with_metadata(start, end, region):
     return readings_revisions
 
 
-def getReadingsFromFunnelGauges():
-    params = {
-        'dateRangeStart': yesterday,
-        'dateRangeEnd': yesterday,
-        'gaugeType': ['FunnelCatch', 'FunnelCatchWithOverflow'],
-        'pagination': {'limit': 3}
-    }
-
-    readings = api_post(RAINLOG_READING_GETFILTERED, params)
-    return json.dumps(readings, indent=3)
-
-
 def to_dataframe(json_bytes):
     """
     Convert API response to pandas DataFrame. Input must be in bytes.
