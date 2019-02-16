@@ -29,15 +29,6 @@ venv/
 .installed.cfg
 *.egg*
 
-# spa_c_files builds
-pvlib/spa_c_files/build*
-pvlib/spa_c_files/spa_py.c
-
-# spa_c_files source
-pvlib/spa_c_files/spa.c
-pvlib/spa_c_files/spa.h
-pvlib/spa_c_files/spa_tester.c
-
 # generated documentation
 docs/sphinx/source/generated
 docs/sphinx/source/savefig
@@ -83,6 +74,5 @@ coverage.xml
 # vi
 *.swp
 
-#Ignore some notebooks
+#Ignore notebooks
 *.ipynb
-!docs/tutorials/*.ipynb
