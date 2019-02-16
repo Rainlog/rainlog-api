@@ -52,16 +52,72 @@ def parse_date(datetimelike):
     return dt.strftime('%Y-%m-%d')
 
 
-def get_readings(date_range_start, date_range_end, region, limit=None):
+def get_readings(start, end, region, limit=None):
     params = {
-        'dateRangeStart': parse_date(date_range_start),
-        'dateRangeEnd': parse_date(date_range_end),
+        'dateRangeStart': parse_date(start),
+        'dateRangeEnd': parse_date(end),
         'region': region,
     }
     if limit:
         params['pagination'] = {'limit': 3}
     readings = api_post(RAINLOG_READING_GETFILTERED, params)
     return readings
+
+
+def readings_to_gauge_revision_ids(readings):
+    if isinstance(readings, pd.DataFrame):
+        revision_ids = readings['gaugeRevisionId'].unique().tolist()
+    else:
+        # could add handling for json dict as in original example
+        raise TypeError('unsupported readings type')
+    return revision_ids
+
+
+def get_gauge_revisions(revision_ids, start, end, region):
+    params = {
+        'dateRangeStart': parse_date(start),
+        'dateRangeEnd': parse_date(end),
+        'region': region,
+        'gaugeRevisionIds': revision_ids
+    }
+    revisions = api_post(RAINLOG_GAUGEREVISION_GETFILTERED, params)
+    return revisions
+
+
+def get_readings_with_metadata(start, end, region):
+    """
+    Get gauge readings and metadata.
+
+    Parameters
+    ----------
+    start: str, date, datetime, Timestamp
+    end: str, date, datetime, Timestamp
+    region: dict
+        See example dicts CIRCLE_NEAR_UA and BOX_NEAR_UA for format.
+
+    Returns
+    -------
+    readings_revisions: DataFrame
+        Tidy rainlog data with columns:
+        'gaugeId', 'gaugeRevisionId', 'quality', 'rainAmount', 'readingDate',
+        'readingHour', 'readingId', 'readingMinute', 'remarks',
+        'snowAccumulation', 'snowDepth', 'brand', 'createdDate', 'description',
+        'gaugeType', 'gaugeTypeOther', 'model', 'position'
+    """
+    readings = get_readings(start, end, region)
+    readings_df = pd.read_json(readings)
+    revision_ids = readings_to_gauge_revision_ids(readings_df)
+    revisions = get_gauge_revisions(revision_ids, start, end, region)
+    revisions_df = pd.read_json(revisions)
+    latlon = pd.DataFrame(revisions_df['position'].tolist())
+    revisions_df = revisions_df.merge(latlon, left_index=True,
+                                      right_index=True, how='inner')
+    # don't need these duplicated columns
+    revisions_df = revisions_df.drop(['position', 'gaugeId'], axis='columns')
+    readings_revisions = readings_df.merge(revisions_df,
+                                           on='gaugeRevisionId',
+                                           how='inner')
+    return readings_revisions
 
 
 def getReadingsFromFunnelGauges():
@@ -76,40 +132,13 @@ def getReadingsFromFunnelGauges():
     return json.dumps(readings, indent=3)
 
 
-# gets readings recorded yesterday,
-# then gets the associated gaugeRevision information
-def getReadingsWithGaugeInfo():
-    #convenience function to pull out gaugeRevisionId
-    byRevisionId = lambda elem: elem['gaugeRevisionId']
-
-    getReadingsParams = {
-        'dateRangeStart': yesterday,
-        'dateRangeEnd': yesterday,
-        'gaugeType': ['FunnelCatch', 'FunnelCatchWithOverflow'],
-        'pagination': {'limit': 3}
-    }
-    readings = apiPostNoAuth(RAINLOG_READING_GETFILTERED, getReadingsParams)
-
-    getGaugeRevisionsParams = {
-        'gaugeRevisionIds': list(map(byRevisionId, readings))
-    }
-    gaugeRevisions = api_post(RAINLOG_GAUGEREVISION_GETFILTERED, getGaugeRevisionsParams)
-
-    # note that the API does no ordering - you will need to sort locally if you need that
-    grouped = dict()
-    for reading in readings:
-        grouped[byRevisionId(reading)] = {'reading': reading}
-    for gaugeRevision in gaugeRevisions:
-        grouped[byRevisionId(gaugeRevision)]['gaugeRevision'] = gaugeRevision
-
-    out = {key: json.dumps(value, indent=3) for key, value in grouped.items()}
-    return out
-
-
 def to_dataframe(json_bytes):
     """
     Convert API response to pandas DataFrame. Input must be in bytes.
     Do not call response.json() before passing in the data.
+
+    Unless expanded to include date parsing, easier to just call
+    pd.read_json() in a script.
     """
     df = pd.read_json(json_bytes)
     return df
@@ -117,6 +146,8 @@ def to_dataframe(json_bytes):
 
 if __name__ == '__main__':
     yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
-    out = get_readings(yesterday, yesterday, BOX_NEAR_UA)
-    out = to_dataframe(out)
-    print(out)
+    start, end, region = yesterday, yesterday, BOX_NEAR_UA
+
+    readings_revisions = get_readings_with_metadata(start, end, region)
+
+    print(readings_revisions)
