@@ -6,7 +6,6 @@ Requires Python 3.6 or newer.
 """
 
 import argparse
-import datetime
 import json
 import logging
 
@@ -15,9 +14,11 @@ import requests
 
 RAINLOG_API_BASE = 'https://rainlog.org/api/'
 RAINLOG_VERSIONED_API_BASE = RAINLOG_API_BASE + '1.0/'
-RAINLOG_READING_GETFILTERED = RAINLOG_VERSIONED_API_BASE + 'Reading/getFiltered'
+RAINLOG_READING_GETFILTERED = \
+    RAINLOG_VERSIONED_API_BASE + 'Reading/getFiltered'
 RAINLOG_GAUGE_GETFILTERED = RAINLOG_VERSIONED_API_BASE + 'Gauge/getFiltered'
-RAINLOG_GAUGEREVISION_GETFILTERED = RAINLOG_VERSIONED_API_BASE + 'GaugeRevision/getFiltered'
+RAINLOG_GAUGEREVISION_GETFILTERED = \
+    RAINLOG_VERSIONED_API_BASE + 'GaugeRevision/getFiltered'
 RAINLOG_DEFAULT_HEADERS_NO_AUTH = {'content-type': 'application/json'}
 
 
@@ -151,7 +152,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '--out', help='outfile path. default rainlog_{start}_{end}.csv')
     parser.add_argument(
-        '--region', help='predefined region in this module (default: BOX_TUCSON)',
+        '--region',
+        help='predefined region in this module (default: BOX_TUCSON)',
         default='BOX_TUCSON')
     args = parser.parse_args()
 
