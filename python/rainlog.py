@@ -1,8 +1,8 @@
 """
 Functions for reading data from rainlog in Python.
-Run `python python/rainlog.py` to get an example print out.
+Run `python python/rainlog.py -h` for help.
 """
-
+import argparse
 import datetime
 import json
 import logging
@@ -133,9 +133,23 @@ def to_dataframe(json_bytes):
 
 
 if __name__ == '__main__':
-    yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
-    start, end, region = yesterday, yesterday, BOX_NEAR_UA
+    parser = argparse.ArgumentParser(
+        description='get data from the rainlog API')
+    parser.add_argument('--start', help='start date in YYYYMMDD format')
+    parser.add_argument('--end', help='end date in YYYYMMDD format')
+    parser.add_argument(
+        '--out', help='outfile path. default rainlog_{start}_{end}.csv')
+    args = parser.parse_args()
+
+    start = pd.Timestamp(args.start)
+    end = pd.Timestamp(args.end)
+    region = BOX_NEAR_UA
 
     readings_revisions = get_readings_with_metadata(start, end, region)
 
-    print(readings_revisions)
+    if args.out:
+        outfile = args.out
+    else:
+        ftime = '%Y%m%d'
+        outfile = f'rainlog_{start.strftime(ftime)}_{end.strftime(ftime)}.csv'
+    readings_revisions.to_csv(outfile)
