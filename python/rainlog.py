@@ -1,7 +1,10 @@
 """
 Functions for reading data from rainlog in Python.
 Run `python python/rainlog.py -h` for help.
+
+Requires Python 3.6 or newer.
 """
+
 import argparse
 import datetime
 import json
@@ -30,6 +33,14 @@ BOX_NEAR_UA = {
     "eastLng": -110.8488008,
     "northLat": 32.3332841,
     "southLat": 32.1332841,
+}
+
+BOX_TUCSON = {
+    "type": "Rectangle",
+    "westLng": -111.432962,
+    "eastLng": -110.4512513,
+    "northLat": 32.599326,
+    "southLat": 31.689010,
 }
 
 
@@ -135,15 +146,18 @@ def to_dataframe(json_bytes):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='get data from the rainlog API')
-    parser.add_argument('--start', help='start date in YYYYMMDD format')
-    parser.add_argument('--end', help='end date in YYYYMMDD format')
+    parser.add_argument('start', help='start date in YYYYMMDD format')
+    parser.add_argument('end', help='end date in YYYYMMDD format')
     parser.add_argument(
         '--out', help='outfile path. default rainlog_{start}_{end}.csv')
+    parser.add_argument(
+        '--region', help='predefined region in this module (default: BOX_TUCSON)',
+        default='BOX_TUCSON')
     args = parser.parse_args()
 
     start = pd.Timestamp(args.start)
     end = pd.Timestamp(args.end)
-    region = BOX_NEAR_UA
+    region = globals()[args.region]
 
     readings_revisions = get_readings_with_metadata(start, end, region)
 
