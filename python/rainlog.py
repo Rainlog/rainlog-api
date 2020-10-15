@@ -47,7 +47,7 @@ BOX_TUCSON = {
 
 # call the api, return the json, raises exception on error
 def api_post(url, params):
-    logging.info('Posting to %s with %s', url, json)
+    logging.info('Posting to %s with %s', url, params)
     r = requests.post(
         url,
         headers=RAINLOG_DEFAULT_HEADERS_NO_AUTH,
@@ -64,14 +64,18 @@ def parse_date(datetimelike):
     return dt.strftime('%Y-%m-%d')
 
 
-def get_readings(start, end, region, limit=None):
+def get_readings(start, end, region, offset=None, limit=None):
     params = {
         'dateRangeStart': parse_date(start),
         'dateRangeEnd': parse_date(end),
         'region': region,
     }
-    if limit:
-        params['pagination'] = {'limit': 3}
+    if offset or limit:
+        params['pagination'] = {}
+        if offset:
+            params['pagination']['offset'] = offset
+        if limit:
+            params['pagination']['limit'] = limit
     readings = api_post(RAINLOG_READING_GETFILTERED, params)
     return readings
 
@@ -96,7 +100,7 @@ def get_gauge_revisions(revision_ids, start, end, region):
     return revisions
 
 
-def get_readings_with_metadata(start, end, region):
+def get_readings_with_metadata(start, end, region, pagination_offset, pagination_limit):
     """
     Get gauge readings and metadata.
 
@@ -116,7 +120,7 @@ def get_readings_with_metadata(start, end, region):
         'snowAccumulation', 'snowDepth', 'brand', 'createdDate', 'description',
         'gaugeType', 'gaugeTypeOther', 'model', 'position'
     """
-    readings = get_readings(start, end, region)
+    readings = get_readings(start, end, region, pagination_offset, pagination_limit)
     readings_df = pd.read_json(readings)
     revision_ids = readings_to_gauge_revision_ids(readings_df)
     revisions = get_gauge_revisions(revision_ids, start, end, region)
@@ -155,13 +159,17 @@ if __name__ == '__main__':
         '--region',
         help='predefined region in this module (default: BOX_TUCSON)',
         default='BOX_TUCSON')
+    parser.add_argument('--pagination-offset', help='First result to return')
+    parser.add_argument('--pagination-limit', help='Number of results to return (Max:1000)')
     args = parser.parse_args()
 
     start = pd.Timestamp(args.start)
     end = pd.Timestamp(args.end)
     region = globals()[args.region]
+    pagination_offset = args.pagination_offset
+    pagination_limit = args.pagination_limit
 
-    readings_revisions = get_readings_with_metadata(start, end, region)
+    readings_revisions = get_readings_with_metadata(start, end, region, pagination_offset, pagination_limit)
 
     if args.out:
         outfile = args.out
@@ -169,3 +177,4 @@ if __name__ == '__main__':
         ftime = '%Y%m%d'
         outfile = f'rainlog_{start.strftime(ftime)}_{end.strftime(ftime)}.csv'
     readings_revisions.to_csv(outfile)
+    
