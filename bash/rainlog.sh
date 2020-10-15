@@ -20,7 +20,7 @@ curl -X POST \
              "radius": 3.0
            },
            "quality": ["Good", "Trace", "Snow"],
-	         "pagination": {"limit": 3}
+           "pagination": {"offset":0, "limit": 3}
         }' \
      -v https://rainlog.org/api/1.0/Reading/getFiltered
 
@@ -30,7 +30,7 @@ curl -X POST \
      -d '{
            "dateRangeStart":"2000-01-01",
            "dateRangeEnd":"2015-01-05",
-	         "pagination": {"limit": 3}
+           "pagination": {"offset":0, "limit": 3}
         }' \
      -v https://rainlog.org/api/1.0/GaugeRevision/getFiltered
 
@@ -40,6 +40,6 @@ curl -X POST \
      -d '{
            "dateRangeStart":"2000-01-01",
            "dateRangeEnd":"2015-01-05",
-	         "pagination": {"limit": 3}
+           "pagination": {"offset":0, "limit": 3}
         }' \
      -v https://rainlog.org/api/1.0/Gauge/getFiltered
